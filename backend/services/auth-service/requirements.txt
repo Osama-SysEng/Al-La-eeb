@@ -1,0 +1,16 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+sqlalchemy[asyncio]==2.0.30
+asyncpg==0.29.0
+alembic==1.13.1
+redis==5.0.4
+python-jose[cryptography]==3.4.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.31
+pydantic==2.7.1
+pydantic-settings==2.2.1
+python-dotenv==1.2.2
+psutil==5.9.8
+numpy==1.26.4
+pillow==12.3.0
+opencv-python==4.9.0.80

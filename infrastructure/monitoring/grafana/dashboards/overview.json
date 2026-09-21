@@ -1,0 +1,35 @@
+{
+  "dashboard": {
+    "title": "Al-La'eeb Platform Overview",
+    "panels": [
+      {
+        "title": "API Gateway Requests/sec",
+        "type": "graph",
+        "targets": [
+          {"expr": "rate(http_requests_total[5m])"}
+        ]
+      },
+      {
+        "title": "AI Engine GPU Utilization",
+        "type": "gauge",
+        "targets": [
+          {"expr": "nvidia_gpu_utilization"}
+        ]
+      },
+      {
+        "title": "Active Video Streams",
+        "type": "stat",
+        "targets": [
+          {"expr": "active_rtmp_streams"}
+        ]
+      },
+      {
+        "title": "Auth Service Response Time",
+        "type": "graph",
+        "targets": [
+          {"expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))"}
+        ]
+      }
+    ]
+  }
+}

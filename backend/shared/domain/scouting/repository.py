@@ -1,0 +1,6 @@
+from typing import Protocol
+from .contracts import ScoutPage, ScoutSnapshot
+
+class ScoutRepository(Protocol):
+    def get(self, identifier: str, actor_id: str) -> ScoutSnapshot | None: ...
+    def list_for_owner(self, actor_id: str, cursor: str | None = None, limit: int = 50) -> ScoutPage: ...

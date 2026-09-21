@@ -1,0 +1,16 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+sqlalchemy[asyncio]==2.0.30
+asyncpg==0.29.0
+redis==5.0.4
+pydantic==2.7.1
+pydantic-settings==2.2.1
+python-dotenv==1.0.1
+psutil==5.9.8
+numpy==1.26.4
+opencv-python==4.9.0.80
+mediapipe==0.10.11
+pillow==10.3.0
+qdrant-client==1.9.0
+onnxruntime==1.17.1
+ultralytics==8.2.0

@@ -1,0 +1,56 @@
+name: Al-La'eeb CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: allaeeb
+
+jobs:
+  test-auth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r backend/services/auth-service/requirements.txt
+          pip install pytest pytest-asyncio httpx
+      - name: Run auth tests
+        run: pytest backend/services/auth-service/ -v
+
+  test-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r backend/services/ai-engine/requirements.txt
+          pip install pytest pytest-asyncio
+      - name: Run AI tests
+        run: pytest backend/services/ai-engine/ -v
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install linting tools
+        run: pip install black flake8 mypy isort
+      - name: Run black
+        run: black --check backend/
+      - name: Run flake8
+        run: flake8 backend/ --max-line-length=120
+      - name: Run isort
+        run: isort --check-only backend/

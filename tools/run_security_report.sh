@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; report="${SECURITY_REPORT_DIR:-$root/reports/security}";mkdir -p "$report";declare -A state
+run(){ local n="$1";shift;if command -v "$1" >/dev/null 2>&1;then if "$@";then state[$n]=passed;else state[$n]=findings_or_failure;fi;else state[$n]=tool_missing;fi;}
+cd "$root";run dependency_audit pip-audit -r backend/services/auth-service/requirements.txt -f json -o "$report/pip-audit.json";run python_sast bandit -r backend -x backend/services/ai-engine/app/tests,backend/services/auth-service/app/tests -s B104,B105,B106 -f json -o "$report/bandit.json";run owasp_sast semgrep --config p/owasp-top-ten --json --output "$report/semgrep.json" backend
+if python tools/secret_heuristic.py --root . --output "$report/secret-heuristic.json";then state[secret_scan]=passed_heuristic;else state[secret_scan]=findings_or_failure;fi
+{ echo '# Al-La-eeb Security Report';echo;echo "Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)";echo;echo '| Control | Status | Evidence |';echo '|---|---|---|';echo "| Dependency audit | ${state[dependency_audit]} | pip-audit.json |";echo "| Python SAST | ${state[python_sast]} | bandit.json |";echo "| OWASP SAST | ${state[owasp_sast]} | semgrep.json |";echo "| Secret scan | ${state[secret_scan]} | secret-heuristic.json (fallback) |";echo;echo 'Raw evidence must be reviewed before production media processing.';} > "$report/summary.md";cat "$report/summary.md"
