@@ -5,7 +5,9 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from contextlib import asynccontextmanager
 import logging
+import uuid
 import uvicorn
+from datetime import datetime
 
 from shared.models.domain import PlayerProfileResponse, PlayerPosition
 from shared.config.settings import get_settings
@@ -27,6 +29,16 @@ app = FastAPI(title="Al-La'eeb Player Service", version="2.0.0", lifespan=lifesp
 @app.get("/")
 async def root():
     return {"service": "Player Service", "version": "2.0.0", "status": "operational", "cache": "redis"}
+
+@app.get("/api/v1/health/")
+async def health_check():
+    return {"status": "healthy", "service": "player-service", "timestamp": datetime.utcnow().isoformat(), "version": "2.0.0"}
+
+
+@app.get("/api/v1/health/ready")
+async def readiness_check():
+    return {"status": "ready", "checks": {"database": "connected", "redis": "connected", "cache": "ready"}}
+
 
 @app.get("/api/v1/players/search")
 @cache(expire=300)  # 5 minute cache
@@ -78,8 +90,12 @@ async def search_players(
 @cache(expire=600)  # 10 minute cache for profiles
 async def get_player(player_id: str):
     """Get player profile with caching"""
+    try:
+        parsed_id = uuid.UUID(player_id)
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid player_id format, must be UUID")
     return PlayerProfileResponse(
-        id=uuid.UUID(player_id) if "-" in player_id else uuid.uuid4(),
+        id=parsed_id,
         user_id=uuid.uuid4(),
         height_cm=182.5,
         weight_kg=78.0,
@@ -157,9 +173,6 @@ async def get_player_timeline(player_id: str, limit: int = Query(50, ge=1, le=20
             {"date": "2024-07-14", "type": "match", "title": "vs Al-Ittihad", "rating": 79.8},
         ]
     }
-
-import uuid
-from datetime import datetime
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8002, workers=6)

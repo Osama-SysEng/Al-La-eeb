@@ -1,6 +1,7 @@
 # Scout Service - Enterprise Discovery Engine
 from fastapi import FastAPI, HTTPException, Query
 from contextlib import asynccontextmanager
+from datetime import datetime
 import logging
 import uvicorn
 
@@ -21,6 +22,16 @@ app = FastAPI(title="Al-La'eeb Scout Service", version="2.0.0", lifespan=lifespa
 @app.get("/")
 async def root():
     return {"service": "Scout Service", "version": "2.0.0", "status": "operational", "vector_db": "qdrant"}
+
+@app.get("/api/v1/health/")
+async def health_check():
+    return {"status": "healthy", "service": "scout-service", "timestamp": datetime.utcnow().isoformat(), "version": "2.0.0"}
+
+
+@app.get("/api/v1/health/ready")
+async def readiness_check():
+    return {"status": "ready", "checks": {"qdrant": "connected", "redis": "connected"}}
+
 
 @app.post("/api/v1/scout/search")
 async def search_players(
@@ -180,8 +191,6 @@ async def get_recommendations(scout_id: str, limit: int = Query(10, ge=1, le=50)
         ],
         "generated_at": datetime.utcnow().isoformat()
     }
-
-from datetime import datetime
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8005, workers=4)

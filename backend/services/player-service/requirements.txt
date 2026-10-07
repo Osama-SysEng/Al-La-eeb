@@ -6,3 +6,4 @@ pydantic==2.7.1
 pydantic-settings==2.2.1
 python-dotenv==1.0.1
 redis==5.0.4
+fastapi-cache2==0.2.1
