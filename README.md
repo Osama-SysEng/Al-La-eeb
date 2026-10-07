@@ -183,3 +183,8 @@ Confidential / Engineering Handover - Al-La'eeb Platform v1.0.0
 - MediaPipe for pose estimation
 - Qdrant for vector similarity search
 - OpenAI/Anthropic for NLP capabilities
+
+## What's New (Oct 2026)
+- Live PostgreSQL schema (13 tables) + `.env.example` + Docker Compose
+- CI workflow (pytest) + `SECURITY.md` + `.dockerignore`
+- Interactive 3D showcase: open `web-3d/index.html` (Three.js, animated, mouse-reactive)
