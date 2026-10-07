@@ -9,11 +9,20 @@ redis_pool = redis.ConnectionPool(
     port=settings.REDIS_PORT,
     db=settings.REDIS_DB,
     decode_responses=True,
-    max_connections=50
+    max_connections=50,
+    protocol=2,  # RESP2: compatible with Redis 5+ (redis-py 5 defaults to RESP3/HELLO)
 )
 
 async def get_redis():
-    return redis.Redis(connection_pool=redis_pool)
+    # Fresh client per call: safe across event loops (TestClient portals,
+    # workers). For high throughput, replace with a loop-bound pool.
+    return redis.Redis(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        db=settings.REDIS_DB,
+        decode_responses=True,
+        protocol=2,
+    )
 
 class CacheKeys:
     @staticmethod

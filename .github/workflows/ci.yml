@@ -11,8 +11,41 @@ env:
   IMAGE_PREFIX: allaeeb
 
 jobs:
+  test-backend-root:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-asyncio httpx
+      - name: Run backend root tests (pure domain tests)
+        run: cd backend && python -m pytest -q
+
   test-auth:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: allaeeb
+          POSTGRES_USER: allaeeb
+          POSTGRES_PASSWORD: allaeeb_ci_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U allaeeb -d allaeeb"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://allaeeb:allaeeb_ci_password@localhost:5432/allaeeb
+      REDIS_HOST: localhost
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,8 +55,12 @@ jobs:
         run: |
           pip install -r backend/services/auth-service/requirements.txt
           pip install pytest pytest-asyncio httpx
-      - name: Run auth tests
-        run: pytest backend/services/auth-service/ -v
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+      - name: Load dev schema (partitioning-free)
+        run: PGPASSWORD=allaeeb_ci_password psql -h localhost -U allaeeb -d allaeeb -v ON_ERROR_STOP=1 -f infrastructure/scripts/init-db.dev.sql
+      - name: Run auth tests (from service root)
+        working-directory: backend/services/auth-service
+        run: python -m pytest app/tests/ -q
 
   test-ai:
     runs-on: ubuntu-latest
@@ -36,8 +73,8 @@ jobs:
         run: |
           pip install -r backend/services/ai-engine/requirements.txt
           pip install pytest pytest-asyncio
-      - name: Run AI tests
-        run: pytest backend/services/ai-engine/ -v
+      - name: Run AI tests (from service root)
+        run: cd backend/services/ai-engine && python -m pytest app/tests/ -q
 
   lint:
     runs-on: ubuntu-latest
