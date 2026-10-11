@@ -1,7 +1,8 @@
 # Health Check Router
-from fastapi import APIRouter
 from datetime import datetime
+
 import psutil
+from fastapi import APIRouter
 
 router = APIRouter()
 

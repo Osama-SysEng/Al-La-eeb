@@ -1,10 +1,11 @@
 # Rate Limiting Middleware - Enhanced
-from fastapi import Request, HTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
-import time
 import logging
-from shared.utils.redis_client import get_redis, CacheKeys
+
+from fastapi import HTTPException, Request
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from shared.config.settings import get_settings
+from shared.utils.redis_client import get_redis
 
 settings = get_settings()
 logger = logging.getLogger("rate-limiter")

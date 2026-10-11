@@ -1,8 +1,9 @@
 # Al-La'eeb Shared Configuration - Enhanced Security Edition
 import os
-from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import List
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):

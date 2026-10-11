@@ -1,11 +1,11 @@
 # Virtual Coach Router
-from fastapi import APIRouter, HTTPException
-from typing import Optional, List
 from datetime import datetime
-import uuid
+from typing import List, Optional
 
-from shared.models.domain import CoachingReport, DrillRecommendation
+from fastapi import APIRouter
+
 from shared.config.settings import get_settings
+from shared.models.domain import DrillRecommendation
 
 router = APIRouter()
 settings = get_settings()
@@ -432,9 +432,17 @@ async def generate_coaching_report(video_id: str, player_id: str, language: str 
     weekly_plan = coach.generate_weekly_plan(drills)
 
     if language == "ar":
-        coach_feedback = "أداء ممتاز في التمرير والتحرك بدون كرة. يجب العمل على قوة التسديد والتحديات الهوائية. التمركز الدفاعي جيد لكن يحتاج لتحسين السرعة في اتخاذ القرار في الثلث الأخير."
+        coach_feedback = (
+            "أداء ممتاز في التمرير والتحرك بدون كرة. "
+            "يجب العمل على قوة التسديد والتحديات الهوائية. "
+            "التمركز الدفاعي جيد لكن يحتاج لتحسين السرعة في اتخاذ القرار في الثلث الأخير."
+        )
     else:
-        coach_feedback = "Excellent performance in passing and off-the-ball movement. Need to work on shot power and aerial duels. Defensive positioning is good but decision speed in the final third needs improvement."
+        coach_feedback = (
+            "Excellent performance in passing and off-the-ball movement. "
+            "Need to work on shot power and aerial duels. "
+            "Defensive positioning is good but decision speed in the final third needs improvement."
+        )
 
     return {
         "video_id": video_id,
@@ -459,9 +467,10 @@ async def get_drill_library(
     offset = max(0, offset)
     if category:
         drills = coach.DRILL_LIBRARY.get(category, [])
+        end = offset + limit
         return {
             "category": category,
-            "drills": drills[offset : offset + limit],
+            "drills": drills[offset:end],
             "total": len(drills),
             "limit": limit,
             "offset": offset,
@@ -479,14 +488,35 @@ async def coach_chat(message: str, player_id: str, language: str = "en"):
     # In production: Integrate with GPT-4o/Claude/Gemini
     responses = {
         "en": {
-            "improve_shooting": "To improve your shooting power, focus on: 1) Hip rotation through the shot, 2) Plant foot positioning, 3) Follow-through towards target. Try drill DR-001 3x per week.",
-            "tactics": "Your positioning is good but you tend to drop too deep. Try to stay higher up the pitch to receive between the lines.",
-            "fitness": "Your sprint speed is elite-level. Focus on maintaining it in the final 15 minutes of matches with endurance training DR-023.",
+            "improve_shooting": (
+                "To improve your shooting power, focus on: 1) Hip rotation through the shot, "
+                "2) Plant foot positioning, 3) Follow-through towards target. "
+                "Try drill DR-001 3x per week."
+            ),
+            "tactics": (
+                "Your positioning is good but you tend to drop too deep. "
+                "Try to stay higher up the pitch to receive between the lines."
+            ),
+            "fitness": (
+                "Your sprint speed is elite-level. "
+                "Focus on maintaining it in the final 15 minutes of matches "
+                "with endurance training DR-023."
+            ),
         },
         "ar": {
-            "improve_shooting": "لتحسين قوة التسديد، ركز على: 1) دوران الوركين أثناء التسديد، 2) وضع القدم الداعمة، 3) المتابعة نحو الهدف. جرب التمرين DR-001 3 مرات أسبوعياً.",
-            "tactics": "تمركزك جيد لكنك تميل للنزول للخلف كثيراً. حاول البقاء في مناطق أعلى لاستقبال الكرة بين الخطوط.",
-            "fitness": "سرعتك في السبرت على مستوى النخبة. ركز على الحفاظ عليها في الـ15 دقيقة الأخيرة من المباريات مع تدريب التحمل DR-023.",
+            "improve_shooting": (
+                "لتحسين قوة التسديد، ركز على: 1) دوران الوركين أثناء التسديد، "
+                "2) وضع القدم الداعمة، 3) المتابعة نحو الهدف. "
+                "جرب التمرين DR-001 3 مرات أسبوعياً."
+            ),
+            "tactics": (
+                "تمركزك جيد لكنك تميل للنزول للخلف كثيراً. "
+                "حاول البقاء في مناطق أعلى لاستقبال الكرة بين الخطوط."
+            ),
+            "fitness": (
+                "سرعتك في السبرت على مستوى النخبة. "
+                "ركز على الحفاظ عليها في الـ15 دقيقة الأخيرة من المباريات مع تدريب التحمل DR-023."
+            ),
         },
     }
 

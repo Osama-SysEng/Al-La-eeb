@@ -1,10 +1,11 @@
 # Auth Service - Enterprise Scale
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
 import logging
-import uvicorn
+from contextlib import asynccontextmanager
 
-from app.routers import auth, verification, health
+import uvicorn
+from app.routers import auth, health, verification
+from fastapi import FastAPI
+
 from shared.config.settings import get_settings
 
 settings = get_settings()

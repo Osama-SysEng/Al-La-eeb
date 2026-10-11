@@ -1,19 +1,20 @@
 # Biometric Verification Router - Enhanced Security
 import base64
 import io
-import time
 import logging
+import time
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from math import radians, sin, cos, sqrt, atan2
+from math import atan2, cos, radians, sin, sqrt
 
+from app.routers.auth import UserResponse, get_current_user, log_audit_event
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from shared.config.settings import get_settings
 from shared.models.domain import (
     FaceVerificationRequest,
     FaceVerificationResult,
     VerificationStatus,
 )
-from shared.config.settings import get_settings
-from app.routers.auth import get_current_user, UserResponse, log_audit_event
 
 logger = logging.getLogger("verification-service")
 router = APIRouter()
@@ -73,7 +74,7 @@ class BiometricVerifier:
             self._validate_image(image_base64)
 
             image_data = base64.b64decode(image_base64.split(",")[-1])
-            image_bytes = io.BytesIO(image_data)
+            io.BytesIO(image_data)
 
             # In production: Use InsightFace
             # Mock with realistic values
@@ -265,18 +266,18 @@ async def verify_identity(
             and geo_result["valid"]
             and not face_result.get("spoof_detected")
         ):
-            status = VerificationStatus.VERIFIED
+            verification_status = VerificationStatus.VERIFIED
         elif overall_confidence >= 0.75 and geo_result["valid"]:
-            status = VerificationStatus.MANUAL_REVIEW
+            verification_status = VerificationStatus.MANUAL_REVIEW
         else:
-            status = VerificationStatus.FAILED
+            verification_status = VerificationStatus.FAILED
 
         result = FaceVerificationResult(
             player_id=request.player_id,
             face_match_score=round(face_result.get("confidence", 0), 3),
             kit_match_score=round(kit_result.get("ocr_confidence", 0), 3),
             overall_confidence=round(overall_confidence, 3),
-            verification_status=status,
+            verification_status=verification_status,
             processing_time_ms=round(total_time, 2),
             anti_fraud_passed=not face_result.get("spoof_detected", True),
             geofence_valid=geo_result["valid"],
@@ -288,7 +289,7 @@ async def verify_identity(
             "BIOMETRIC_VERIFICATION",
             str(request.player_id),
             {
-                "status": status.value,
+                "status": verification_status.value,
                 "confidence": overall_confidence,
                 "processing_time_ms": total_time,
             },

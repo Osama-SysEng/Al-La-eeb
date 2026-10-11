@@ -1,16 +1,17 @@
 # Player Service - Enterprise Scale with Caching
-from fastapi import FastAPI, Depends, HTTPException, Query, Request
+import logging
+import uuid
+from contextlib import asynccontextmanager
+from datetime import datetime
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, Query
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
-from contextlib import asynccontextmanager
-import logging
-import uuid
-import uvicorn
-from datetime import datetime
 
-from shared.models.domain import PlayerProfileResponse, PlayerPosition
 from shared.config.settings import get_settings
+from shared.models.domain import PlayerPosition, PlayerProfileResponse
 from shared.utils.redis_client import get_redis
 
 settings = get_settings()
@@ -128,7 +129,10 @@ async def get_player(player_id: str):
         current_club="Al-Ahli FC",
         current_academy="Elite Youth Academy",
         jersey_number=10,
-        biography="Dynamic midfielder with excellent vision and passing range. Known for creating chances from deep positions.",
+        biography=(
+            "Dynamic midfielder with excellent vision and passing range. "
+            "Known for creating chances from deep positions."
+        ),
         achievements=[
             "U-17 National Champion 2024",
             "Best Midfielder - Youth League",

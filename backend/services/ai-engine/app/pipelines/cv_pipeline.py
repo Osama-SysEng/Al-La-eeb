@@ -1,10 +1,9 @@
 # Computer Vision Pipeline
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+
 import cv2
 import numpy as np
-from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
-from datetime import datetime
-import time
 
 
 @dataclass

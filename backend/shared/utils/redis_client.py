@@ -1,5 +1,6 @@
 # Redis Client
 import redis.asyncio as redis
+
 from shared.config.settings import get_settings
 
 settings = get_settings()

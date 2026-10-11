@@ -1,12 +1,13 @@
 # Scout Service - Enterprise Discovery Engine
-from fastapi import FastAPI, HTTPException, Query
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
-import logging
-import uvicorn
 
-from shared.models.domain import PlayerDiscoveryCard, PlayerPosition
+import uvicorn
+from fastapi import FastAPI, Query
+
 from shared.config.settings import get_settings
+from shared.models.domain import PlayerDiscoveryCard, PlayerPosition
 
 settings = get_settings()
 logger = logging.getLogger("scout-service")

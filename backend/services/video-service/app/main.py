@@ -1,9 +1,10 @@
 # Video Service
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
-import logging
+
 import uvicorn
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
 from shared.config.settings import get_settings
 

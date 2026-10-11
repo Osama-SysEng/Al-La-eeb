@@ -1,11 +1,12 @@
 # Performance Analysis Router
-from fastapi import APIRouter, HTTPException
-from typing import Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Optional
 
-from shared.models.domain import PerformanceMetrics, CoachingReport, DrillRecommendation
+from fastapi import APIRouter
+
 from shared.config.settings import get_settings
+from shared.models.domain import CoachingReport, DrillRecommendation, PerformanceMetrics
 
 router = APIRouter()
 settings = get_settings()
@@ -90,7 +91,10 @@ async def get_coaching_report(video_id: str):
                 difficulty="intermediate",
                 duration_minutes=20,
                 target_skill="shot_power",
-                description="Practice striking the ball with maximum power from 18-25 meters. Focus on follow-through and hip rotation.",
+                description=(
+                    "Practice striking the ball with maximum power from 18-25 meters. "
+                    "Focus on follow-through and hip rotation."
+                ),
                 video_url="https://drills.allaeeb.com/DR-001",
                 frequency_per_week=3,
             ),
@@ -101,7 +105,10 @@ async def get_coaching_report(video_id: str):
                 difficulty="advanced",
                 duration_minutes=15,
                 target_skill="aerial_ability",
-                description="Plyometric jumps with resistance bands simulating aerial challenges against taller opponents.",
+                description=(
+                    "Plyometric jumps with resistance bands "
+                    "simulating aerial challenges against taller opponents."
+                ),
                 video_url="https://drills.allaeeb.com/DR-042",
                 frequency_per_week=2,
             ),
@@ -137,8 +144,16 @@ async def get_coaching_report(video_id: str):
             "saturday": ["match_simulation"],
             "sunday": ["recovery"],
         },
-        coach_feedback_ar="أداء ممتاز في التمرير والتحرك بدون كرة. يجب العمل على قوة التسديد والتحديات الهوائية. التمركز الدفاعي جيد لكن يحتاج لتحسين السرعة في اتخاذ القرار في الثلث الأخير.",
-        coach_feedback_en="Excellent performance in passing and off-the-ball movement. Need to work on shot power and aerial duels. Defensive positioning is good but decision speed in the final third needs improvement.",
+        coach_feedback_ar=(
+            "أداء ممتاز في التمرير والتحرك بدون كرة. "
+            "يجب العمل على قوة التسديد والتحديات الهوائية. "
+            "التمركز الدفاعي جيد لكن يحتاج لتحسين السرعة في اتخاذ القرار في الثلث الأخير."
+        ),
+        coach_feedback_en=(
+            "Excellent performance in passing and off-the-ball movement. "
+            "Need to work on shot power and aerial duels. "
+            "Defensive positioning is good but decision speed in the final third needs improvement."
+        ),
     )
 
 

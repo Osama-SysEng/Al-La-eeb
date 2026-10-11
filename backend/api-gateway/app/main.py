@@ -1,17 +1,18 @@
 # API Gateway - Enhanced Security & Error Handling
-from fastapi import FastAPI, Request, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.exceptions import RequestValidationError
-import httpx
-import time
 import logging
+import time
 import traceback
 from contextlib import asynccontextmanager
-from typing import Dict, Any
+from typing import Any, Dict
 
-from app.middleware.rate_limit import RateLimitMiddleware
+import httpx
 from app.middleware.auth import AuthMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
+from fastapi import FastAPI, HTTPException, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
+
 from shared.config.settings import get_settings
 
 settings = get_settings()

@@ -1,9 +1,10 @@
 # Al-La'eeb Domain Models
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, UUID4
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
+
+from pydantic import UUID4, BaseModel, Field
 
 
 class UserRole(str, Enum):

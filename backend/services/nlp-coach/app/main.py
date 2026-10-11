@@ -1,16 +1,16 @@
 # NLP Coach Service - FastAPI Application
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
-import uvicorn
 
+import uvicorn
 from app.routers import coach, health
+from fastapi import FastAPI
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(f"🗣️ NLP Coach Service starting... Loading language models...")
+    print("🗣️ NLP Coach Service starting... Loading language models...")
     yield
-    print(f"🗣️ NLP Coach Service shutting down...")
+    print("🗣️ NLP Coach Service shutting down...")
 
 
 app = FastAPI(

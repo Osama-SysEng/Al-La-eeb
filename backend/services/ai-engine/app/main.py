@@ -1,12 +1,13 @@
 # AI Engine Service - Enhanced with Error Recovery
+import logging
+from contextlib import asynccontextmanager
+
+import uvicorn
+from app.routers import analysis, health, processing
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import logging
-import uvicorn
 
-from app.routers import processing, analysis, health
 from shared.config.settings import get_settings
 
 settings = get_settings()

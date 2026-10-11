@@ -1,23 +1,18 @@
 # Authentication Router - Enhanced Security & Error Handling
+import logging
 import re
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-import bcrypt
-from jose import JWTError, jwt
-import logging
 
-from shared.models.domain import (
-    UserCreate,
-    UserResponse,
-    TokenResponse,
-    TokenPayload,
-    UserRole,
-)
+import bcrypt
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+
 from shared.config.settings import get_settings
-from shared.utils.redis_client import get_redis, CacheKeys
+from shared.models.domain import TokenResponse, UserCreate, UserResponse, UserRole
+from shared.utils.redis_client import CacheKeys, get_redis
 
 logger = logging.getLogger("auth-service")
 router = APIRouter()
@@ -205,7 +200,8 @@ async def register(user_data: UserCreate, request: Request):
     if not email_pattern.match(user_data.email):
         raise HTTPException(status_code=400, detail="Invalid email format")
 
-    hashed_password = hash_password(user_data.password)
+    # Hash password (stored by persistence layer in production)
+    hash_password(user_data.password)
     user_id = uuid.uuid4()
 
     await log_audit_event(

@@ -1,29 +1,29 @@
 # Video Processing Router - Enterprise Scale
 import asyncio
+import logging
 import uuid
 from datetime import datetime
+from typing import List, Optional
+
+from app.pipelines.cv_pipeline import (
+    BallTrackingEngine,
+    EventDetectionEngine,
+    SkeletalTrackingEngine,
+)
+from app.pipelines.metrics_engine import MetricsExtractionEngine
 from fastapi import (
     APIRouter,
-    UploadFile,
+    BackgroundTasks,
     File,
     Form,
     HTTPException,
-    BackgroundTasks,
     Request,
+    UploadFile,
 )
-from typing import Optional, List
-import numpy as np
-import logging
 
-from shared.models.domain import VideoUploadCreate, VideoUploadResponse, MatchStatus
 from shared.config.settings import get_settings
-from shared.utils.redis_client import get_redis, CacheKeys
-from app.pipelines.cv_pipeline import (
-    SkeletalTrackingEngine,
-    BallTrackingEngine,
-    EventDetectionEngine,
-)
-from app.pipelines.metrics_engine import MetricsExtractionEngine
+from shared.models.domain import MatchStatus, VideoUploadResponse
+from shared.utils.redis_client import CacheKeys, get_redis
 from shared.video_governance import ConsentRecord, ledger
 
 router = APIRouter()
@@ -123,11 +123,10 @@ class VideoProcessor:
         """Execute individual pipeline stage"""
         if stage_name == "skeletal_tracking":
             # Simulate heavy processing
-            frame_data = []
             for batch_start in range(0, 162000, 1000):
                 await asyncio.sleep(0.001)  # Simulate work
         elif stage_name == "metrics_extraction":
-            metrics = metrics_engine.extract_metrics(
+            metrics_engine.extract_metrics(
                 frame_data=[], events=[], video_metadata={"duration": 5400, "fps": 30}
             )
 

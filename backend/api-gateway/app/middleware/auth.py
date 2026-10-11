@@ -1,7 +1,8 @@
 # Auth Middleware
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Request
+from jose import JWTError, jwt
 from starlette.middleware.base import BaseHTTPMiddleware
-from jose import jwt, JWTError
+
 from shared.config.settings import get_settings
 
 settings = get_settings()

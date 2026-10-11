@@ -1,9 +1,8 @@
-import pytest
 import numpy as np
 from app.pipelines.cv_pipeline import (
-    SkeletalTrackingEngine,
     BallTrackingEngine,
     EventDetectionEngine,
+    SkeletalTrackingEngine,
 )
 
 
