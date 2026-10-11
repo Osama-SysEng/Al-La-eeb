@@ -5,70 +5,100 @@ from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError, jwt
 import logging
 
-from shared.models.domain import UserCreate, UserResponse, TokenResponse, TokenPayload, UserRole
+from shared.models.domain import (
+    UserCreate,
+    UserResponse,
+    TokenResponse,
+    TokenPayload,
+    UserRole,
+)
 from shared.config.settings import get_settings
 from shared.utils.redis_client import get_redis, CacheKeys
 
 logger = logging.getLogger("auth-service")
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 settings = get_settings()
-ACCESS_TOKEN_KIND = 'ac' + 'cess'
-REFRESH_TOKEN_KIND = 're' + 'fresh'
+ACCESS_TOKEN_KIND = "ac" + "cess"
+REFRESH_TOKEN_KIND = "re" + "fresh"
 
 # ============== PASSWORD VALIDATION ==============
+
 
 class PasswordValidationError(Exception):
     pass
 
+
 def validate_password(password: str) -> None:
     """Enforce strong password policy"""
     if len(password) < settings.MIN_PASSWORD_LENGTH:
-        raise PasswordValidationError(f"Password must be at least {settings.MIN_PASSWORD_LENGTH} characters")
-    if settings.REQUIRE_UPPERCASE and not re.search(r'[A-Z]', password):
-        raise PasswordValidationError("Password must contain at least one uppercase letter")
-    if settings.REQUIRE_NUMBER and not re.search(r'\d', password):
+        raise PasswordValidationError(
+            f"Password must be at least {settings.MIN_PASSWORD_LENGTH} characters"
+        )
+    if settings.REQUIRE_UPPERCASE and not re.search(r"[A-Z]", password):
+        raise PasswordValidationError(
+            "Password must contain at least one uppercase letter"
+        )
+    if settings.REQUIRE_NUMBER and not re.search(r"\d", password):
         raise PasswordValidationError("Password must contain at least one number")
-    if settings.REQUIRE_SPECIAL_CHAR and not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-        raise PasswordValidationError("Password must contain at least one special character")
+    if settings.REQUIRE_SPECIAL_CHAR and not re.search(
+        r'[!@#$%^&*(),.?":{}|<>]', password
+    ):
+        raise PasswordValidationError(
+            "Password must contain at least one special character"
+        )
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+        )
     except Exception as e:
         logger.error(f"Password verification error: {e}")
         return False
 
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+
 
 # ============== JWT UTILS ==============
 
-def create_token(data: dict, expires_delta: Optional[timedelta] = None, token_type: str | None = None) -> str:
+
+def create_token(
+    data: dict, expires_delta: Optional[timedelta] = None, token_type: str | None = None
+) -> str:
     if token_type is None:
         token_type = ACCESS_TOKEN_KIND
     to_encode = data.copy()
     now = datetime.utcnow()
 
     if token_type == ACCESS_TOKEN_KIND:
-        expire = now + (expires_delta or timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = now + (
+            expires_delta or timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
     else:
-        expire = now + (expires_delta or timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS))
+        expire = now + (
+            expires_delta or timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
+        )
 
-    to_encode.update({
-        "exp": expire,
-        "iat": now,
-        "type": token_type,
-        "jti": str(uuid.uuid4()),
-        "iss": settings.JWT_ISSUER,
-        "aud": settings.JWT_AUDIENCE,
-    })
+    to_encode.update(
+        {
+            "exp": expire,
+            "iat": now,
+            "type": token_type,
+            "jti": str(uuid.uuid4()),
+            "iss": settings.JWT_ISSUER,
+            "aud": settings.JWT_AUDIENCE,
+        }
+    )
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
     credentials_exception = HTTPException(
@@ -82,8 +112,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
 
     try:
         payload = jwt.decode(
-            token, 
-            settings.SECRET_KEY, 
+            token,
+            settings.SECRET_KEY,
             algorithms=[settings.JWT_ALGORITHM],
             issuer=settings.JWT_ISSUER,
             audience=settings.JWT_AUDIENCE,
@@ -115,7 +145,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
             role=UserRole(payload.get("role", "player")),
             is_active=True,
             is_verified=payload.get("verified", False),
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
 
     except JWTError as e:
@@ -125,9 +155,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
         logger.error(f"Unexpected auth error: {e}")
         raise credentials_exception
 
+
 # ============== AUDIT LOGGING ==============
 
-async def log_audit_event(event_type: str, user_id: str, details: dict, request: Request = None):
+
+async def log_audit_event(
+    event_type: str, user_id: str, details: dict, request: Request = None
+):
     """Log security events for compliance"""
     if not settings.AUDIT_LOG_ENABLED:
         return
@@ -147,9 +181,13 @@ async def log_audit_event(event_type: str, user_id: str, details: dict, request:
     await redis.lpush("audit_logs", str(log_entry))
     await redis.ltrim("audit_logs", 0, 9999)  # Keep last 10k
 
+
 # ============== ENDPOINTS ==============
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(user_data: UserCreate, request: Request):
     """
     Register a new user with strong password validation
@@ -161,14 +199,19 @@ async def register(user_data: UserCreate, request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
     # Validate email format
-    email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    email_pattern = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
     if not email_pattern.match(user_data.email):
         raise HTTPException(status_code=400, detail="Invalid email format")
 
     hashed_password = hash_password(user_data.password)
     user_id = uuid.uuid4()
 
-    await log_audit_event("USER_REGISTERED", str(user_id), {"email": user_data.email, "role": user_data.role}, request)
+    await log_audit_event(
+        "USER_REGISTERED",
+        str(user_id),
+        {"email": user_data.email, "role": user_data.role},
+        request,
+    )
 
     return UserResponse(
         id=user_id,
@@ -178,11 +221,14 @@ async def register(user_data: UserCreate, request: Request):
         role=user_data.role,
         is_active=True,
         is_verified=False,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
+
 @router.post("/login", response_model=TokenResponse)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), request: Request = None):
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(), request: Request = None
+):
     """
     Authenticate user with rate limiting and brute-force protection
     """
@@ -192,31 +238,43 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), request: Reque
     # Check brute force protection
     attempts = await redis.get(ip_key)
     if attempts and int(attempts) >= 5:
-        raise HTTPException(status_code=429, detail="Too many login attempts. Please try again in 15 minutes.")
+        raise HTTPException(
+            status_code=429,
+            detail="Too many login attempts. Please try again in 15 minutes.",
+        )
 
     try:
         user_id = str(uuid.uuid4())
         role = UserRole.PLAYER
 
-        access_token = create_token({
-            "sub": user_id, 
-            "role": role,
-            "email": form_data.username,
-            "verified": True
-        })
-        refresh_token = create_token({"sub": user_id, "role": role}, token_type="refresh")
+        access_token = create_token(
+            {
+                "sub": user_id,
+                "role": role,
+                "email": form_data.username,
+                "verified": True,
+            }
+        )
+        refresh_token = create_token(
+            {"sub": user_id, "role": role}, token_type="refresh"
+        )
 
         # Store session
         await redis.setex(
             CacheKeys.user_session(user_id),
             settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            access_token
+            access_token,
         )
 
         # Reset failed attempts
         await redis.delete(ip_key)
 
-        await log_audit_event("USER_LOGIN", user_id, {"email": form_data.username, "success": True}, request)
+        await log_audit_event(
+            "USER_LOGIN",
+            user_id,
+            {"email": form_data.username, "success": True},
+            request,
+        )
 
         return TokenResponse(
             access_token=access_token,
@@ -230,8 +288,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), request: Reque
                 role=role,
                 is_active=True,
                 is_verified=True,
-                created_at=datetime.utcnow()
-            )
+                created_at=datetime.utcnow(),
+            ),
         )
 
     except Exception as e:
@@ -241,8 +299,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), request: Reque
         pipe.expire(ip_key, 900)  # 15 minutes
         await pipe.execute()
 
-        await log_audit_event("USER_LOGIN_FAILED", "unknown", {"email": form_data.username, "error": str(e)}, request)
+        await log_audit_event(
+            "USER_LOGIN_FAILED",
+            "unknown",
+            {"email": form_data.username, "error": str(e)},
+            request,
+        )
         raise HTTPException(status_code=401, detail="Incorrect email or password")
+
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(refresh_token: str, request: Request = None):
@@ -251,8 +315,8 @@ async def refresh_token(refresh_token: str, request: Request = None):
     """
     try:
         payload = jwt.decode(
-            refresh_token, 
-            settings.SECRET_KEY, 
+            refresh_token,
+            settings.SECRET_KEY,
             algorithms=[settings.JWT_ALGORITHM],
             issuer=settings.JWT_ISSUER,
         )
@@ -267,7 +331,9 @@ async def refresh_token(refresh_token: str, request: Request = None):
         redis = await get_redis()
         jti = payload.get("jti")
         if jti and await redis.sismember("token_blacklist", jti):
-            raise HTTPException(status_code=401, detail="Refresh token has been revoked")
+            raise HTTPException(
+                status_code=401, detail="Refresh token has been revoked"
+            )
 
         new_access = create_token({"sub": user_id, "role": role})
         new_refresh = create_token({"sub": user_id, "role": role}, token_type="refresh")
@@ -290,14 +356,17 @@ async def refresh_token(refresh_token: str, request: Request = None):
                 role=UserRole(role),
                 is_active=True,
                 is_verified=True,
-                created_at=datetime.utcnow()
-            )
+                created_at=datetime.utcnow(),
+            ),
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
+
 @router.post("/logout")
-async def logout(current_user: UserResponse = Depends(get_current_user), request: Request = None):
+async def logout(
+    current_user: UserResponse = Depends(get_current_user), request: Request = None
+):
     """
     Secure logout with token revocation
     """
@@ -311,19 +380,24 @@ async def logout(current_user: UserResponse = Depends(get_current_user), request
 
     await log_audit_event("USER_LOGOUT", str(current_user.id), {}, request)
 
-    return {"message": "Successfully logged out", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "message": "Successfully logged out",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: UserResponse = Depends(get_current_user)):
     """Get current authenticated user profile"""
     return current_user
 
+
 @router.post("/change-password")
 async def change_password(
     old_password: str,
     new_password: str,
     current_user: UserResponse = Depends(get_current_user),
-    request: Request = None
+    request: Request = None,
 ):
     """Change password with validation"""
     try:

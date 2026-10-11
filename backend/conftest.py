@@ -1,4 +1,5 @@
 """Backend-root conftest: service-context tests run per-service (see below)."""
+
 import pathlib
 
 _HERE = pathlib.Path(__file__).parent

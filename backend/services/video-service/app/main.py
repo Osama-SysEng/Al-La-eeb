@@ -13,38 +13,49 @@ logger = logging.getLogger("video-service")
 ALLOWED_VIDEO_TYPES = set(settings.ALLOWED_FILE_TYPES)
 MAX_UPLOAD_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Video Service starting...")
     yield
     print("Video Service shutting down...")
 
+
 app = FastAPI(title="Al-La'eeb Video Service", version="1.0.0", lifespan=lifespan)
+
 
 @app.get("/")
 async def root():
     return {"service": "Video Service", "status": "operational"}
 
+
 @app.get("/api/v1/health/")
 async def health_check():
-    return {"status": "healthy", "service": "video-service", "timestamp": datetime.utcnow().isoformat(), "version": "1.0.0"}
+    return {
+        "status": "healthy",
+        "service": "video-service",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0",
+    }
+
 
 @app.get("/api/v1/health/ready")
 async def readiness_check():
     return {"status": "ready", "checks": {"storage": "configured", "cdn": "configured"}}
 
+
 @app.post("/api/v1/videos/upload")
 async def upload_video(
-    file: UploadFile = File(...),
-    player_id: str = Form(...),
-    title: str = Form(...)
+    file: UploadFile = File(...), player_id: str = Form(...), title: str = Form(...)
 ):
     if not player_id or not player_id.strip():
         raise HTTPException(status_code=400, detail="player_id is required")
     if not title or not title.strip():
         raise HTTPException(status_code=400, detail="title is required")
     if len(title) > 255:
-        raise HTTPException(status_code=400, detail="title too long (max 255 characters)")
+        raise HTTPException(
+            status_code=400, detail="title too long (max 255 characters)"
+        )
     if file.content_type not in ALLOWED_VIDEO_TYPES:
         raise HTTPException(
             status_code=400,
@@ -66,7 +77,9 @@ async def upload_video(
         )
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file upload")
-    logger.info(f"Video upload accepted: {file.filename} ({len(contents)} bytes) for player {player_id}")
+    logger.info(
+        f"Video upload accepted: {file.filename} ({len(contents)} bytes) for player {player_id}"
+    )
     return {
         "message": "Video uploaded successfully",
         "filename": file.filename,
@@ -74,8 +87,9 @@ async def upload_video(
         "size_bytes": len(contents),
         "player_id": player_id,
         "title": title,
-        "status": "processing"
+        "status": "processing",
     }
+
 
 @app.get("/api/v1/videos/{video_id}/stream")
 async def get_stream(video_id: str):
@@ -85,8 +99,9 @@ async def get_stream(video_id: str):
         "video_id": video_id,
         "hls_url": f"https://cdn.allaeeb.com/stream/{video_id}/playlist.m3u8",
         "dash_url": f"https://cdn.allaeeb.com/stream/{video_id}/manifest.mpd",
-        "rtmp_ingest": f"rtmp://live.allaeeb.com/live/{video_id}"
+        "rtmp_ingest": f"rtmp://live.allaeeb.com/live/{video_id}",
     }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8006)

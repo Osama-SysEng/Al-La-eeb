@@ -7,7 +7,11 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from math import radians, sin, cos, sqrt, atan2
 
-from shared.models.domain import FaceVerificationRequest, FaceVerificationResult, VerificationStatus
+from shared.models.domain import (
+    FaceVerificationRequest,
+    FaceVerificationResult,
+    VerificationStatus,
+)
 from shared.config.settings import get_settings
 from app.routers.auth import get_current_user, UserResponse, log_audit_event
 
@@ -15,9 +19,12 @@ logger = logging.getLogger("verification-service")
 router = APIRouter()
 settings = get_settings()
 
+
 class BiometricSecurityError(Exception):
     """Custom exception for biometric security violations"""
+
     pass
+
 
 class BiometricVerifier:
     """
@@ -44,10 +51,14 @@ class BiometricVerifier:
                 raise BiometricSecurityError("Image too large (max 10MB)")
 
             # Validate image format
-            if not (decoded[:4] == b'\xff\xd8\xff\xe0' or  # JPEG
-                    decoded[:8] == b'\x89PNG\r\n\x1a\n' or    # PNG
-                    decoded[:4] == b'RIFF'):                      # WEBP
-                raise BiometricSecurityError("Invalid image format. Use JPEG, PNG, or WEBP")
+            if not (
+                decoded[:4] == b"\xff\xd8\xff\xe0"  # JPEG
+                or decoded[:8] == b"\x89PNG\r\n\x1a\n"  # PNG
+                or decoded[:4] == b"RIFF"
+            ):  # WEBP
+                raise BiometricSecurityError(
+                    "Invalid image format. Use JPEG, PNG, or WEBP"
+                )
 
         except Exception as e:
             if isinstance(e, BiometricSecurityError):
@@ -69,7 +80,9 @@ class BiometricVerifier:
             processing_time = (time.time() - start_time) * 1000
 
             if processing_time > self.max_processing_time_ms:
-                logger.warning(f"Face verification exceeded SLA: {processing_time:.0f}ms")
+                logger.warning(
+                    f"Face verification exceeded SLA: {processing_time:.0f}ms"
+                )
 
             # Simulate anti-spoofing
             liveness_score = 0.98
@@ -83,7 +96,7 @@ class BiometricVerifier:
                 "liveness_score": liveness_score,
                 "spoof_detected": spoof_detected,
                 "face_count": 1,
-                "quality_score": 0.91
+                "quality_score": 0.91,
             }
 
         except BiometricSecurityError:
@@ -95,11 +108,16 @@ class BiometricVerifier:
                 "score": 0.0,
                 "confidence": 0.0,
                 "error": str(e),
-                "processing_time_ms": (time.time() - start_time) * 1000
+                "processing_time_ms": (time.time() - start_time) * 1000,
             }
 
-    async def verify_kit(self, image_base64: str, jersey_number: int, 
-                         expected_primary_color: str, expected_secondary_color: str) -> dict:
+    async def verify_kit(
+        self,
+        image_base64: str,
+        jersey_number: int,
+        expected_primary_color: str,
+        expected_secondary_color: str,
+    ) -> dict:
         """Layer 2: Jersey number OCR + Kit color verification"""
         start_time = time.time()
 
@@ -121,7 +139,7 @@ class BiometricVerifier:
                 "detected_number": str(jersey_number),
                 "detected_primary_color": expected_primary_color,
                 "detected_secondary_color": expected_secondary_color,
-                "jersey_position_valid": True
+                "jersey_position_valid": True,
             }
 
         except BiometricSecurityError:
@@ -132,12 +150,13 @@ class BiometricVerifier:
                 "match": False,
                 "score": 0.0,
                 "error": str(e),
-                "processing_time_ms": (time.time() - start_time) * 1000
+                "processing_time_ms": (time.time() - start_time) * 1000,
             }
 
     @staticmethod
-    def verify_geofence(player_lat: float, player_lon: float, 
-                       accuracy: float, match_location: tuple) -> dict:
+    def verify_geofence(
+        player_lat: float, player_lon: float, accuracy: float, match_location: tuple
+    ) -> dict:
         """Verify player is within geofenced area"""
 
         # Validate coordinates
@@ -146,7 +165,7 @@ class BiometricVerifier:
                 "valid": False,
                 "distance_meters": None,
                 "accuracy": accuracy,
-                "reason": "Invalid GPS coordinates"
+                "reason": "Invalid GPS coordinates",
             }
 
         if accuracy > settings.GPS_ACCURACY_THRESHOLD:
@@ -154,7 +173,7 @@ class BiometricVerifier:
                 "valid": False,
                 "distance_meters": None,
                 "accuracy": accuracy,
-                "reason": f"GPS accuracy {accuracy}m exceeds threshold {settings.GPS_ACCURACY_THRESHOLD}m"
+                "reason": f"GPS accuracy {accuracy}m exceeds threshold {settings.GPS_ACCURACY_THRESHOLD}m",
             }
 
         # Haversine formula
@@ -165,8 +184,8 @@ class BiometricVerifier:
         dlat = lat2 - lat1
         dlon = lon2 - lon1
 
-        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
         distance = R * c
 
         return {
@@ -174,16 +193,18 @@ class BiometricVerifier:
             "distance_meters": round(distance, 2),
             "accuracy": accuracy,
             "threshold": settings.GEOFENCE_MAX_DISTANCE_METERS,
-            "coordinates_valid": True
+            "coordinates_valid": True,
         }
 
+
 # ============== ENDPOINTS ==============
+
 
 @router.post("/face", response_model=FaceVerificationResult)
 async def verify_identity(
     request: FaceVerificationRequest,
     http_request: Request,
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user),
 ):
     """
     Dual-Layer Biometric Verification Endpoint
@@ -194,20 +215,28 @@ async def verify_identity(
 
     try:
         # Layer 1: Face Verification
-        face_result = await verifier.verify_face(request.image_base64, registered_embedding=[])
+        face_result = await verifier.verify_face(
+            request.image_base64, registered_embedding=[]
+        )
 
         if face_result.get("spoof_detected"):
-            await log_audit_event("SPOOFING_DETECTED", str(request.player_id), {
-                "liveness_score": face_result.get("liveness_score")
-            }, http_request)
-            raise HTTPException(status_code=403, detail="Spoofing attack detected. Identity verification blocked.")
+            await log_audit_event(
+                "SPOOFING_DETECTED",
+                str(request.player_id),
+                {"liveness_score": face_result.get("liveness_score")},
+                http_request,
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="Spoofing attack detected. Identity verification blocked.",
+            )
 
         # Layer 2: Kit Verification
         kit_result = await verifier.verify_kit(
             request.image_base64,
             request.jersey_number,
             request.kit_color_primary,
-            request.kit_color_secondary
+            request.kit_color_secondary,
         )
 
         # Geofence Check
@@ -216,7 +245,7 @@ async def verify_identity(
             request.gps_latitude,
             request.gps_longitude,
             request.gps_accuracy,
-            match_location
+            match_location,
         )
 
         # Aggregate Results with weighted scoring
@@ -224,14 +253,18 @@ async def verify_identity(
         kit_weight = 0.4
 
         overall_confidence = (
-            face_result.get("confidence", 0) * face_weight + 
-            kit_result.get("ocr_confidence", 0) * kit_weight
+            face_result.get("confidence", 0) * face_weight
+            + kit_result.get("ocr_confidence", 0) * kit_weight
         )
 
         total_time = (time.time() - start_time) * 1000
 
         # Determine status with strict thresholds
-        if overall_confidence >= 0.90 and geo_result["valid"] and not face_result.get("spoof_detected"):
+        if (
+            overall_confidence >= 0.90
+            and geo_result["valid"]
+            and not face_result.get("spoof_detected")
+        ):
             status = VerificationStatus.VERIFIED
         elif overall_confidence >= 0.75 and geo_result["valid"]:
             status = VerificationStatus.MANUAL_REVIEW
@@ -247,15 +280,20 @@ async def verify_identity(
             processing_time_ms=round(total_time, 2),
             anti_fraud_passed=not face_result.get("spoof_detected", True),
             geofence_valid=geo_result["valid"],
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
 
         # Audit log
-        await log_audit_event("BIOMETRIC_VERIFICATION", str(request.player_id), {
-            "status": status.value,
-            "confidence": overall_confidence,
-            "processing_time_ms": total_time
-        }, http_request)
+        await log_audit_event(
+            "BIOMETRIC_VERIFICATION",
+            str(request.player_id),
+            {
+                "status": status.value,
+                "confidence": overall_confidence,
+                "processing_time_ms": total_time,
+            },
+            http_request,
+        )
 
         return result
 
@@ -268,10 +306,10 @@ async def verify_identity(
         logger.error(f"Unexpected verification error: {e}")
         raise HTTPException(status_code=500, detail="Internal verification error")
 
+
 @router.get("/status/{player_id}")
 async def get_verification_status(
-    player_id: str,
-    current_user: UserResponse = Depends(get_current_user)
+    player_id: str, current_user: UserResponse = Depends(get_current_user)
 ):
     """Get latest verification status for a player"""
     return {
@@ -279,5 +317,5 @@ async def get_verification_status(
         "status": VerificationStatus.VERIFIED,
         "last_verified": datetime.utcnow(),
         "method": "dual_layer_biometric",
-        "security_level": "high"
+        "security_level": "high",
     }

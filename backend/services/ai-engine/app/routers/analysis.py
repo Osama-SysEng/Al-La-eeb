@@ -10,6 +10,7 @@ from shared.config.settings import get_settings
 router = APIRouter()
 settings = get_settings()
 
+
 @router.get("/metrics/{video_id}", response_model=PerformanceMetrics)
 async def get_performance_metrics(video_id: str, player_id: Optional[str] = None):
     """Get extracted 47 performance metrics for a video"""
@@ -39,8 +40,9 @@ async def get_performance_metrics(video_id: str, player_id: Optional[str] = None
         center_of_mass_stability=0.79,
         limb_symmetry=0.91,
         overall_rating=78.5,
-        percentile_vs_professionals=82.3
+        percentile_vs_professionals=82.3,
     )
+
 
 @router.get("/report/{video_id}", response_model=CoachingReport)
 async def get_coaching_report(video_id: str):
@@ -55,24 +57,29 @@ async def get_coaching_report(video_id: str):
             "Excellent passing accuracy under pressure",
             "Strong off-the-ball movement creating space",
             "Good defensive positioning and interceptions",
-            "Consistent first touch quality"
+            "Consistent first touch quality",
         ],
         weaknesses=[
             "Shot power could be improved (currently 87 km/h avg)",
             "Aerial duel success rate below professional average",
             "Decision speed in final third needs improvement",
-            "Risk-taking index slightly conservative"
+            "Risk-taking index slightly conservative",
         ],
         key_moments=[
             {"time": "12:34", "event": "brilliant_through_ball", "rating": 9.2},
             {"time": "23:45", "event": "successful_tackle", "rating": 8.5},
-            {"time": "45:12", "event": "missed_chance", "rating": 5.5, "note": "Poor positioning"},
-            {"time": "67:23", "event": "sprint_recovery", "rating": 8.8}
+            {
+                "time": "45:12",
+                "event": "missed_chance",
+                "rating": 5.5,
+                "note": "Poor positioning",
+            },
+            {"time": "67:23", "event": "sprint_recovery", "rating": 8.8},
         ],
         similar_professionals=[
             {"name": "Mohamed Salah", "similarity": 0.87, "position": "RW"},
             {"name": "Riyad Mahrez", "similarity": 0.82, "position": "RW"},
-            {"name": "Sadio Mane", "similarity": 0.79, "position": "LW"}
+            {"name": "Sadio Mane", "similarity": 0.79, "position": "LW"},
         ],
         similarity_score=0.84,
         drills=[
@@ -85,7 +92,7 @@ async def get_coaching_report(video_id: str):
                 target_skill="shot_power",
                 description="Practice striking the ball with maximum power from 18-25 meters. Focus on follow-through and hip rotation.",
                 video_url="https://drills.allaeeb.com/DR-001",
-                frequency_per_week=3
+                frequency_per_week=3,
             ),
             DrillRecommendation(
                 drill_id="DR-042",
@@ -96,7 +103,7 @@ async def get_coaching_report(video_id: str):
                 target_skill="aerial_ability",
                 description="Plyometric jumps with resistance bands simulating aerial challenges against taller opponents.",
                 video_url="https://drills.allaeeb.com/DR-042",
-                frequency_per_week=2
+                frequency_per_week=2,
             ),
             DrillRecommendation(
                 drill_id="DR-128",
@@ -107,7 +114,7 @@ async def get_coaching_report(video_id: str):
                 target_skill="decision_speed",
                 description="Small-sided games (3v2) in final third with limited time on ball (2 seconds max).",
                 video_url="https://drills.allaeeb.com/DR-128",
-                frequency_per_week=3
+                frequency_per_week=3,
             ),
             DrillRecommendation(
                 drill_id="DR-256",
@@ -118,8 +125,8 @@ async def get_coaching_report(video_id: str):
                 target_skill="explosive_speed",
                 description="Agility ladder drills combined with 10m sprints. Focus on first-step quickness.",
                 video_url="https://drills.allaeeb.com/DR-256",
-                frequency_per_week=4
-            )
+                frequency_per_week=4,
+            ),
         ],
         weekly_plan={
             "monday": ["DR-001", "DR-256"],
@@ -128,11 +135,12 @@ async def get_coaching_report(video_id: str):
             "thursday": ["DR-256"],
             "friday": ["DR-128", "DR-042"],
             "saturday": ["match_simulation"],
-            "sunday": ["recovery"]
+            "sunday": ["recovery"],
         },
         coach_feedback_ar="أداء ممتاز في التمرير والتحرك بدون كرة. يجب العمل على قوة التسديد والتحديات الهوائية. التمركز الدفاعي جيد لكن يحتاج لتحسين السرعة في اتخاذ القرار في الثلث الأخير.",
-        coach_feedback_en="Excellent performance in passing and off-the-ball movement. Need to work on shot power and aerial duels. Defensive positioning is good but decision speed in the final third needs improvement."
+        coach_feedback_en="Excellent performance in passing and off-the-ball movement. Need to work on shot power and aerial duels. Defensive positioning is good but decision speed in the final third needs improvement.",
     )
+
 
 @router.get("/timeline/{video_id}")
 async def get_event_timeline(video_id: str):
@@ -140,12 +148,47 @@ async def get_event_timeline(video_id: str):
     return {
         "video_id": video_id,
         "events": [
-            {"timestamp": "00:12:34", "type": "pass", "outcome": "success", "x": 0.3, "y": 0.5},
-            {"timestamp": "00:14:22", "type": "sprint", "speed_kmh": 31.2, "distance_m": 25},
-            {"timestamp": "00:23:45", "type": "tackle", "outcome": "won", "x": 0.7, "y": 0.3},
-            {"timestamp": "00:34:12", "type": "shot", "outcome": "on_target", "power": 89, "x": 0.9, "y": 0.5},
-            {"timestamp": "00:45:12", "type": "dribble", "outcome": "success", "beaten_players": 2},
+            {
+                "timestamp": "00:12:34",
+                "type": "pass",
+                "outcome": "success",
+                "x": 0.3,
+                "y": 0.5,
+            },
+            {
+                "timestamp": "00:14:22",
+                "type": "sprint",
+                "speed_kmh": 31.2,
+                "distance_m": 25,
+            },
+            {
+                "timestamp": "00:23:45",
+                "type": "tackle",
+                "outcome": "won",
+                "x": 0.7,
+                "y": 0.3,
+            },
+            {
+                "timestamp": "00:34:12",
+                "type": "shot",
+                "outcome": "on_target",
+                "power": 89,
+                "x": 0.9,
+                "y": 0.5,
+            },
+            {
+                "timestamp": "00:45:12",
+                "type": "dribble",
+                "outcome": "success",
+                "beaten_players": 2,
+            },
             {"timestamp": "00:56:33", "type": "interception", "x": 0.5, "y": 0.4},
-            {"timestamp": "01:12:45", "type": "pass", "outcome": "assist", "x": 0.8, "y": 0.6}
-        ]
+            {
+                "timestamp": "01:12:45",
+                "type": "pass",
+                "outcome": "assist",
+                "x": 0.8,
+                "y": 0.6,
+            },
+        ],
     }

@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import List
 
+
 class Settings(BaseSettings):
     # Application
     APP_NAME: str = "Al-La'eeb"
@@ -56,7 +57,9 @@ class Settings(BaseSettings):
     REDIS_SSL: bool = os.getenv("REDIS_SSL", "false").lower() == "true"
 
     # AI/ML
-    MEDIAPIPE_MODEL_PATH: str = os.getenv("MEDIAPIPE_MODEL_PATH", "/models/pose_landmarker.task")
+    MEDIAPIPE_MODEL_PATH: str = os.getenv(
+        "MEDIAPIPE_MODEL_PATH", "/models/pose_landmarker.task"
+    )
     FACE_RECOGNITION_MODEL: str = os.getenv("FACE_RECOGNITION_MODEL", "buffalo_l")
     NLP_MODEL: str = os.getenv("NLP_MODEL", "gpt-4o")
 
@@ -100,12 +103,18 @@ class Settings(BaseSettings):
     CORS_MAX_AGE: int = 86400
 
     # Content Security
-    ALLOWED_FILE_TYPES: List[str] = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"]
+    ALLOWED_FILE_TYPES: List[str] = [
+        "video/mp4",
+        "video/quicktime",
+        "video/x-msvideo",
+        "video/webm",
+    ]
     MAX_FILE_NAME_LENGTH: int = 255
 
     class Config:
         env_file = ".env"
         case_sensitive = True
+
 
 @lru_cache()
 def get_settings() -> Settings:

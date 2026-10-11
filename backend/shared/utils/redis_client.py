@@ -13,6 +13,7 @@ redis_pool = redis.ConnectionPool(
     protocol=2,  # RESP2: compatible with Redis 5+ (redis-py 5 defaults to RESP3/HELLO)
 )
 
+
 async def get_redis():
     # Fresh client per call: safe across event loops (TestClient portals,
     # workers). For high throughput, replace with a loop-bound pool.
@@ -23,6 +24,7 @@ async def get_redis():
         decode_responses=True,
         protocol=2,
     )
+
 
 class CacheKeys:
     @staticmethod

@@ -9,6 +9,7 @@ from shared.config.settings import get_settings
 settings = get_settings()
 logger = logging.getLogger("rate-limiter")
 
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
@@ -38,8 +39,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     "error": "Rate limit exceeded",
                     "limit": self.requests_per_minute,
                     "window": f"{self.window}s",
-                    "retry_after": await redis.ttl(ip_key)
-                }
+                    "retry_after": await redis.ttl(ip_key),
+                },
             )
 
         # Per-user rate limiting (stricter)
@@ -53,8 +54,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     detail={
                         "error": "User rate limit exceeded",
                         "limit": self.requests_per_minute * 2,
-                        "retry_after": await redis.ttl(user_key)
-                    }
+                        "retry_after": await redis.ttl(user_key),
+                    },
                 )
 
             pipe = redis.pipeline()

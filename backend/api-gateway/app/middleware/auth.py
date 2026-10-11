@@ -6,8 +6,15 @@ from shared.config.settings import get_settings
 
 settings = get_settings()
 
+
 class AuthMiddleware(BaseHTTPMiddleware):
-    PUBLIC_PATHS = ["/api/v1/auth/login", "/api/v1/auth/register", "/health", "/docs", "/openapi.json"]
+    PUBLIC_PATHS = [
+        "/api/v1/auth/login",
+        "/api/v1/auth/register",
+        "/health",
+        "/docs",
+        "/openapi.json",
+    ]
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -20,7 +27,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         token = auth_header.replace("Bearer ", "")
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+            )
             request.state.user = payload
         except JWTError:
             raise HTTPException(status_code=401, detail="Invalid token")

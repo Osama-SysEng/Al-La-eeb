@@ -5,6 +5,7 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, UUID4
 from uuid import uuid4
 
+
 class UserRole(str, Enum):
     PLAYER = "player"
     PARENT = "parent"
@@ -14,6 +15,7 @@ class UserRole(str, Enum):
     ACADEMY = "academy"
     TOURNAMENT_ORGANIZER = "tournament_organizer"
     ADMIN = "admin"
+
 
 class PlayerPosition(str, Enum):
     GOALKEEPER = "GK"
@@ -27,6 +29,7 @@ class PlayerPosition(str, Enum):
     ATTACKING_MIDFIELDER = "CAM"
     STRIKER = "ST"
 
+
 class MatchStatus(str, Enum):
     SCHEDULED = "scheduled"
     LIVE = "live"
@@ -34,13 +37,16 @@ class MatchStatus(str, Enum):
     COMPLETED = "completed"
     ERROR = "error"
 
+
 class VerificationStatus(str, Enum):
     PENDING = "pending"
     VERIFIED = "verified"
     FAILED = "failed"
     MANUAL_REVIEW = "manual_review"
 
+
 # ============== USER MODELS ==============
+
 
 class UserBase(BaseModel):
     email: str
@@ -55,8 +61,10 @@ class UserBase(BaseModel):
     date_of_birth: Optional[datetime] = None
     profile_image_url: Optional[str] = None
 
+
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
+
 
 class UserResponse(UserBase):
     id: UUID4
@@ -66,7 +74,9 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
+
 # ============== PLAYER MODELS ==============
+
 
 class PlayerProfileBase(BaseModel):
     user_id: UUID4
@@ -82,8 +92,10 @@ class PlayerProfileBase(BaseModel):
     achievements: List[str] = []
     video_highlight_url: Optional[str] = None
 
+
 class PlayerProfileCreate(PlayerProfileBase):
     pass
+
 
 class PlayerProfileResponse(PlayerProfileBase):
     id: UUID4
@@ -95,7 +107,9 @@ class PlayerProfileResponse(PlayerProfileBase):
     class Config:
         from_attributes = True
 
+
 # ============== MATCH/VIDEO MODELS ==============
+
 
 class VideoUploadBase(BaseModel):
     player_id: UUID4
@@ -110,8 +124,10 @@ class VideoUploadBase(BaseModel):
     resolution: Optional[str] = None
     fps: Optional[int] = None
 
+
 class VideoUploadCreate(VideoUploadBase):
     pass
+
 
 class VideoUploadResponse(VideoUploadBase):
     id: UUID4
@@ -125,13 +141,16 @@ class VideoUploadResponse(VideoUploadBase):
     class Config:
         from_attributes = True
 
+
 # ============== PERFORMANCE METRICS ==============
+
 
 class SkeletalKeypoints(BaseModel):
     frame_id: int
     timestamp_ms: float
     keypoints: List[Dict[str, float]]  # 33 keypoints with x,y,z,visibility
     player_id: Optional[str] = None
+
 
 class PerformanceMetrics(BaseModel):
     video_id: UUID4
@@ -172,7 +191,9 @@ class PerformanceMetrics(BaseModel):
     class Config:
         from_attributes = True
 
+
 # ============== AI COACH MODELS ==============
+
 
 class DrillRecommendation(BaseModel):
     drill_id: str
@@ -184,6 +205,7 @@ class DrillRecommendation(BaseModel):
     description: str
     video_url: Optional[str] = None
     frequency_per_week: int = 3
+
 
 class CoachingReport(BaseModel):
     id: UUID4
@@ -211,7 +233,9 @@ class CoachingReport(BaseModel):
     class Config:
         from_attributes = True
 
+
 # ============== SCOUT/CLUB MODELS ==============
+
 
 class ScoutSearchFilter(BaseModel):
     positions: List[PlayerPosition] = []
@@ -221,6 +245,7 @@ class ScoutSearchFilter(BaseModel):
     min_overall_score: Optional[float] = None
     dominant_foot: Optional[str] = None
     verified_only: bool = True
+
 
 class PlayerDiscoveryCard(BaseModel):
     player_id: UUID4
@@ -236,7 +261,9 @@ class PlayerDiscoveryCard(BaseModel):
     last_active: datetime
     similarity_to_search: Optional[float] = None
 
+
 # ============== AUTH MODELS ==============
+
 
 class TokenPayload(BaseModel):
     sub: str  # user_id
@@ -244,12 +271,14 @@ class TokenPayload(BaseModel):
     exp: datetime
     jti: str = Field(default_factory=lambda: str(uuid4()))
 
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
     user: UserResponse
+
 
 class FaceVerificationRequest(BaseModel):
     player_id: UUID4
@@ -260,6 +289,7 @@ class FaceVerificationRequest(BaseModel):
     gps_latitude: float
     gps_longitude: float
     gps_accuracy: float
+
 
 class FaceVerificationResult(BaseModel):
     player_id: UUID4

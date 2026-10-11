@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+
 @dataclass(frozen=True)
 class ScoutEvent:
     event_type: str

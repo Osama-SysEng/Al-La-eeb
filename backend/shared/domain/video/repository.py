@@ -1,6 +1,9 @@
 from typing import Protocol
 from .contracts import VideoPage, VideoSnapshot
 
+
 class VideoRepository(Protocol):
     def get(self, identifier: str, actor_id: str) -> VideoSnapshot | None: ...
-    def list_for_owner(self, actor_id: str, cursor: str | None = None, limit: int = 50) -> VideoPage: ...
+    def list_for_owner(
+        self, actor_id: str, cursor: str | None = None, limit: int = 50
+    ) -> VideoPage: ...

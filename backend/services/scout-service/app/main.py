@@ -11,21 +11,35 @@ from shared.config.settings import get_settings
 settings = get_settings()
 logger = logging.getLogger("scout-service")
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🔍 Scout Service starting - Discovery Engine")
     yield
     logger.info("🔍 Scout Service shutting down...")
 
+
 app = FastAPI(title="Al-La'eeb Scout Service", version="2.0.0", lifespan=lifespan)
+
 
 @app.get("/")
 async def root():
-    return {"service": "Scout Service", "version": "2.0.0", "status": "operational", "vector_db": "qdrant"}
+    return {
+        "service": "Scout Service",
+        "version": "2.0.0",
+        "status": "operational",
+        "vector_db": "qdrant",
+    }
+
 
 @app.get("/api/v1/health/")
 async def health_check():
-    return {"status": "healthy", "service": "scout-service", "timestamp": datetime.utcnow().isoformat(), "version": "2.0.0"}
+    return {
+        "status": "healthy",
+        "service": "scout-service",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "2.0.0",
+    }
 
 
 @app.get("/api/v1/health/ready")
@@ -43,10 +57,13 @@ async def search_players(
     max_overall_score: float = Query(100, ge=0, le=100),
     dominant_foot: str = Query(None),
     verified_only: bool = Query(True),
-    sort_by: str = Query("overall_score", enum=["overall_score", "potential_score", "age", "recent_activity"]),
+    sort_by: str = Query(
+        "overall_score",
+        enum=["overall_score", "potential_score", "age", "recent_activity"],
+    ),
     sort_order: str = Query("desc", enum=["asc", "desc"]),
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100)
+    page_size: int = Query(20, ge=1, le=100),
 ):
     """
     Advanced player discovery with vector similarity search
@@ -70,7 +87,7 @@ async def search_players(
             highlight_video_url="https://cdn.allaeeb.com/omar.mp4",
             match_count=32,
             last_active=datetime.utcnow(),
-            similarity_to_search=0.92
+            similarity_to_search=0.92,
         ),
         PlayerDiscoveryCard(
             player_id=uuid.uuid4(),
@@ -84,7 +101,7 @@ async def search_players(
             highlight_video_url="https://cdn.allaeeb.com/khalid.mp4",
             match_count=28,
             last_active=datetime.utcnow(),
-            similarity_to_search=0.87
+            similarity_to_search=0.87,
         ),
         PlayerDiscoveryCard(
             player_id=uuid.uuid4(),
@@ -98,7 +115,7 @@ async def search_players(
             highlight_video_url="https://cdn.allaeeb.com/youssef.mp4",
             match_count=45,
             last_active=datetime.utcnow(),
-            similarity_to_search=0.84
+            similarity_to_search=0.84,
         ),
         PlayerDiscoveryCard(
             player_id=uuid.uuid4(),
@@ -112,7 +129,7 @@ async def search_players(
             highlight_video_url="https://cdn.allaeeb.com/ahmed.mp4",
             match_count=38,
             last_active=datetime.utcnow(),
-            similarity_to_search=0.81
+            similarity_to_search=0.81,
         ),
         PlayerDiscoveryCard(
             player_id=uuid.uuid4(),
@@ -126,7 +143,7 @@ async def search_players(
             highlight_video_url="https://cdn.allaeeb.com/faisal.mp4",
             match_count=41,
             last_active=datetime.utcnow(),
-            similarity_to_search=0.79
+            similarity_to_search=0.79,
         ),
     ]
 
@@ -141,9 +158,10 @@ async def search_players(
             "age_range": [age_min, age_max],
             "country": country,
             "min_score": min_overall_score,
-            "sort_by": sort_by
-        }
+            "sort_by": sort_by,
+        },
     }
+
 
 @app.get("/api/v1/scout/player/{player_id}/detailed")
 async def get_detailed_profile(player_id: str):
@@ -151,33 +169,104 @@ async def get_detailed_profile(player_id: str):
     return {
         "player_id": player_id,
         "detailed_metrics": {
-            "physical": {"speed": 85, "strength": 72, "agility": 88, "endurance": 79, "jump": 76},
-            "technical": {"passing": 91, "shooting": 76, "dribbling": 84, "first_touch": 89, "heading": 71},
-            "tactical": {"positioning": 82, "awareness": 87, "vision": 90, "decisions": 78, "anticipation": 85},
-            "mental": {"composure": 75, "leadership": 68, "work_rate": 85, "consistency": 80, "aggression": 72}
+            "physical": {
+                "speed": 85,
+                "strength": 72,
+                "agility": 88,
+                "endurance": 79,
+                "jump": 76,
+            },
+            "technical": {
+                "passing": 91,
+                "shooting": 76,
+                "dribbling": 84,
+                "first_touch": 89,
+                "heading": 71,
+            },
+            "tactical": {
+                "positioning": 82,
+                "awareness": 87,
+                "vision": 90,
+                "decisions": 78,
+                "anticipation": 85,
+            },
+            "mental": {
+                "composure": 75,
+                "leadership": 68,
+                "work_rate": 85,
+                "consistency": 80,
+                "aggression": 72,
+            },
         },
         "radar_chart_data": {
-            "labels": ["Speed", "Passing", "Shooting", "Dribbling", "Defense", "Physical"],
-            "values": [85, 91, 76, 84, 78, 79]
+            "labels": [
+                "Speed",
+                "Passing",
+                "Shooting",
+                "Dribbling",
+                "Defense",
+                "Physical",
+            ],
+            "values": [85, 91, 76, 84, 78, 79],
         },
         "scout_notes": [
-            {"scout": "Ahmed Hassan", "club": "Man City Academy", "note": "Exceptional vision, needs to improve defensive work rate", "date": "2024-07-15", "rating": 8.5},
-            {"scout": "John Smith", "club": "Liverpool FC", "note": "Premier League potential, recommend trial immediately", "date": "2024-07-20", "rating": 9.0},
-            {"scout": "Carlos Mendez", "club": "Real Madrid", "note": "Great technique but needs more physical development", "date": "2024-07-25", "rating": 7.8}
+            {
+                "scout": "Ahmed Hassan",
+                "club": "Man City Academy",
+                "note": "Exceptional vision, needs to improve defensive work rate",
+                "date": "2024-07-15",
+                "rating": 8.5,
+            },
+            {
+                "scout": "John Smith",
+                "club": "Liverpool FC",
+                "note": "Premier League potential, recommend trial immediately",
+                "date": "2024-07-20",
+                "rating": 9.0,
+            },
+            {
+                "scout": "Carlos Mendez",
+                "club": "Real Madrid",
+                "note": "Great technique but needs more physical development",
+                "date": "2024-07-25",
+                "rating": 7.8,
+            },
         ],
         "similar_players": [
-            {"name": "Mohamed Salah", "similarity": 0.87, "position": "RW", "club": "Liverpool"},
-            {"name": "Riyad Mahrez", "similarity": 0.82, "position": "RW", "club": "Al-Ahli"},
-            {"name": "Sadio Mane", "similarity": 0.79, "position": "LW", "club": "Al-Nassr"}
+            {
+                "name": "Mohamed Salah",
+                "similarity": 0.87,
+                "position": "RW",
+                "club": "Liverpool",
+            },
+            {
+                "name": "Riyad Mahrez",
+                "similarity": 0.82,
+                "position": "RW",
+                "club": "Al-Ahli",
+            },
+            {
+                "name": "Sadio Mane",
+                "similarity": 0.79,
+                "position": "LW",
+                "club": "Al-Nassr",
+            },
         ],
         "video_analysis_available": True,
-        "contact_status": "available_for_contact"
+        "contact_status": "available_for_contact",
     }
+
 
 @app.post("/api/v1/scout/favorite/{player_id}")
 async def favorite_player(player_id: str, scout_id: str):
     """Add player to scout favorites"""
-    return {"player_id": player_id, "scout_id": scout_id, "action": "favorited", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "player_id": player_id,
+        "scout_id": scout_id,
+        "action": "favorited",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
 
 @app.get("/api/v1/scout/recommendations")
 async def get_recommendations(scout_id: str, limit: int = Query(10, ge=1, le=50)):
@@ -185,12 +274,25 @@ async def get_recommendations(scout_id: str, limit: int = Query(10, ge=1, le=50)
     return {
         "scout_id": scout_id,
         "recommendations": [
-            {"player_id": "rec-1", "reason": "Matches your search history for creative midfielders", "confidence": 0.94},
-            {"player_id": "rec-2", "reason": "Rising star in your target region", "confidence": 0.89},
-            {"player_id": "rec-3", "reason": "Similar profile to players you've contacted", "confidence": 0.87}
+            {
+                "player_id": "rec-1",
+                "reason": "Matches your search history for creative midfielders",
+                "confidence": 0.94,
+            },
+            {
+                "player_id": "rec-2",
+                "reason": "Rising star in your target region",
+                "confidence": 0.89,
+            },
+            {
+                "player_id": "rec-3",
+                "reason": "Similar profile to players you've contacted",
+                "confidence": 0.87,
+            },
         ],
-        "generated_at": datetime.utcnow().isoformat()
+        "generated_at": datetime.utcnow().isoformat(),
     }
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8005, workers=4)

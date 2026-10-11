@@ -2,6 +2,7 @@
 
 Production repositories must persist this contract in PostgreSQL and object storage.
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -19,7 +20,9 @@ class ConsentRecord:
 
     def active(self, now: datetime | None = None) -> bool:
         now = now or datetime.now(timezone.utc)
-        return self.revoked_at is None and (self.expires_at is None or self.expires_at > now)
+        return self.revoked_at is None and (
+            self.expires_at is None or self.expires_at > now
+        )
 
 
 @dataclass
@@ -33,16 +36,43 @@ class VideoLedger:
 
     def revoke_consent(self, player_id: str, purpose: str) -> None:
         record = self.consents.get((player_id, purpose))
-        if record: record.revoked_at = datetime.now(timezone.utc)
+        if record:
+            record.revoked_at = datetime.now(timezone.utc)
 
     def has_consent(self, player_id: str, purpose: str) -> bool:
-        return bool(self.consents.get((player_id, purpose)) and self.consents[(player_id, purpose)].active())
+        return bool(
+            self.consents.get((player_id, purpose))
+            and self.consents[(player_id, purpose)].active()
+        )
 
-    def register_job(self, player_id: str, idempotency_key: str, actor_id: str, filename: str, content_fingerprint: str, retention_days: int) -> tuple[dict, bool]:
+    def register_job(
+        self,
+        player_id: str,
+        idempotency_key: str,
+        actor_id: str,
+        filename: str,
+        content_fingerprint: str,
+        retention_days: int,
+    ) -> tuple[dict, bool]:
         key = (player_id, idempotency_key)
-        if key in self.jobs_by_key: return self.jobs_by_key[key], True
-        job = {'video_id': str(uuid4()), 'player_id': player_id, 'actor_id': actor_id, 'idempotency_key': idempotency_key, 'filename': filename, 'content_fingerprint': content_fingerprint, 'status': 'QUEUED', 'retention_days': retention_days, 'created_at': datetime.now(timezone.utc).isoformat(), 'provenance_hash': sha256(f'{player_id}:{actor_id}:{idempotency_key}:{content_fingerprint}'.encode()).hexdigest()}
-        self.jobs_by_key[key] = job; self.jobs_by_id[job['video_id']] = job
+        if key in self.jobs_by_key:
+            return self.jobs_by_key[key], True
+        job = {
+            "video_id": str(uuid4()),
+            "player_id": player_id,
+            "actor_id": actor_id,
+            "idempotency_key": idempotency_key,
+            "filename": filename,
+            "content_fingerprint": content_fingerprint,
+            "status": "QUEUED",
+            "retention_days": retention_days,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "provenance_hash": sha256(
+                f"{player_id}:{actor_id}:{idempotency_key}:{content_fingerprint}".encode()
+            ).hexdigest(),
+        }
+        self.jobs_by_key[key] = job
+        self.jobs_by_id[job["video_id"]] = job
         return job, False
 
 

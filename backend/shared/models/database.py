@@ -22,15 +22,16 @@ primary_engine = create_async_engine(
     pool_timeout=settings.DATABASE_POOL_TIMEOUT,
     connect_args={
         "command_timeout": 60,
-        "server_settings": {
-            "jit": "off",
-            "application_name": "allaeeb_primary"
-        }
-    }
+        "server_settings": {"jit": "off", "application_name": "allaeeb_primary"},
+    },
 )
 
 # Read Replica Engine (for analytics, scout searches)
-read_replica_url = settings.DATABASE_URL.replace("@", "-replica@") if "localhost" in settings.DATABASE_URL else settings.DATABASE_URL
+read_replica_url = (
+    settings.DATABASE_URL.replace("@", "-replica@")
+    if "localhost" in settings.DATABASE_URL
+    else settings.DATABASE_URL
+)
 read_engine = create_async_engine(
     read_replica_url,
     echo=False,
@@ -39,7 +40,10 @@ read_engine = create_async_engine(
     max_overflow=100,
     pool_pre_ping=True,
     pool_recycle=3600,
-    connect_args={"command_timeout": 120, "server_settings": {"application_name": "allaeeb_read"}}
+    connect_args={
+        "command_timeout": 120,
+        "server_settings": {"application_name": "allaeeb_read"},
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -47,26 +51,26 @@ AsyncSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
     autoflush=False,
-    autocommit=False
+    autocommit=False,
 )
 
 ReadOnlySessionLocal = async_sessionmaker(
-    read_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False
+    read_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )
 
 Base = declarative_base()
+
 
 # Connection event listeners for monitoring
 @event.listens_for(primary_engine.sync_engine, "connect")
 def on_connect(dbapi_conn, connection_record):
     logger.debug("New database connection established")
 
+
 @event.listens_for(primary_engine.sync_engine, "checkout")
 def on_checkout(dbapi_conn, connection_record, connection_proxy):
     logger.debug("Database connection checked out from pool")
+
 
 async def get_db():
     """Primary database session for writes"""
@@ -81,6 +85,7 @@ async def get_db():
         finally:
             await session.close()
 
+
 async def get_read_db():
     """Read-only database session for queries"""
     async with ReadOnlySessionLocal() as session:
@@ -88,6 +93,7 @@ async def get_read_db():
             yield session
         finally:
             await session.close()
+
 
 class DatabaseMetrics:
     """Track database performance metrics"""

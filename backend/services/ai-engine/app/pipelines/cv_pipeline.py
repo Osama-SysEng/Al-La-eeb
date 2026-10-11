@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import time
 
+
 @dataclass
 class Keypoint:
     x: float
@@ -13,6 +14,7 @@ class Keypoint:
     z: float
     visibility: float
     name: str
+
 
 @dataclass
 class FrameData:
@@ -23,6 +25,7 @@ class FrameData:
     ball_position: Optional[Tuple[float, float]] = None
     ball_confidence: float = 0.0
 
+
 class SkeletalTrackingEngine:
     """
     MediaPipe Pose-based 33-point skeletal tracking
@@ -30,15 +33,39 @@ class SkeletalTrackingEngine:
     """
 
     KEYPOINT_NAMES = [
-        "nose", "left_eye_inner", "left_eye", "left_eye_outer",
-        "right_eye_inner", "right_eye", "right_eye_outer",
-        "left_ear", "right_ear", "mouth_left", "mouth_right",
-        "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
-        "left_wrist", "right_wrist", "left_pinky", "right_pinky",
-        "left_index", "right_index", "left_thumb", "right_thumb",
-        "left_hip", "right_hip", "left_knee", "right_knee",
-        "left_ankle", "right_ankle", "left_heel", "right_heel",
-        "left_foot_index", "right_foot_index"
+        "nose",
+        "left_eye_inner",
+        "left_eye",
+        "left_eye_outer",
+        "right_eye_inner",
+        "right_eye",
+        "right_eye_outer",
+        "left_ear",
+        "right_ear",
+        "mouth_left",
+        "mouth_right",
+        "left_shoulder",
+        "right_shoulder",
+        "left_elbow",
+        "right_elbow",
+        "left_wrist",
+        "right_wrist",
+        "left_pinky",
+        "right_pinky",
+        "left_index",
+        "right_index",
+        "left_thumb",
+        "right_thumb",
+        "left_hip",
+        "right_hip",
+        "left_knee",
+        "right_knee",
+        "left_ankle",
+        "right_ankle",
+        "left_heel",
+        "right_heel",
+        "left_foot_index",
+        "right_foot_index",
     ]
 
     def __init__(self, model_path: str = None):
@@ -51,12 +78,13 @@ class SkeletalTrackingEngine:
         """Initialize MediaPipe Pose model"""
         try:
             import mediapipe as mp
+
             self.mp_pose = mp.solutions.pose
             self.pose = self.mp_pose.Pose(
                 static_image_mode=False,
                 model_complexity=2,
                 min_detection_confidence=0.5,
-                min_tracking_confidence=0.5
+                min_tracking_confidence=0.5,
             )
             self.mp_drawing = mp.solutions.drawing_utils
             self.model_loaded = True
@@ -64,7 +92,9 @@ class SkeletalTrackingEngine:
             print("Warning: MediaPipe not installed, using mock mode")
             self.model_loaded = False
 
-    def process_frame(self, frame: np.ndarray, frame_id: int, timestamp_ms: float) -> FrameData:
+    def process_frame(
+        self, frame: np.ndarray, frame_id: int, timestamp_ms: float
+    ) -> FrameData:
         """Process single frame and extract 33 keypoints"""
         if not self.model_loaded:
             return self._mock_process_frame(frame, frame_id, timestamp_ms)
@@ -81,7 +111,11 @@ class SkeletalTrackingEngine:
                     y=landmark.y,
                     z=landmark.z,
                     visibility=landmark.visibility,
-                    name=self.KEYPOINT_NAMES[idx] if idx < len(self.KEYPOINT_NAMES) else f"kp_{idx}"
+                    name=(
+                        self.KEYPOINT_NAMES[idx]
+                        if idx < len(self.KEYPOINT_NAMES)
+                        else f"kp_{idx}"
+                    ),
                 )
                 keypoints.append(kp)
 
@@ -89,10 +123,14 @@ class SkeletalTrackingEngine:
             frame_id=frame_id,
             timestamp_ms=timestamp_ms,
             keypoints=keypoints,
-            player_bounding_box=self._get_bounding_box(keypoints) if keypoints else None
+            player_bounding_box=(
+                self._get_bounding_box(keypoints) if keypoints else None
+            ),
         )
 
-    def _mock_process_frame(self, frame: np.ndarray, frame_id: int, timestamp_ms: float) -> FrameData:
+    def _mock_process_frame(
+        self, frame: np.ndarray, frame_id: int, timestamp_ms: float
+    ) -> FrameData:
         """Mock keypoints for testing without MediaPipe"""
         h, w = frame.shape[:2]
         keypoints = []
@@ -135,16 +173,24 @@ class SkeletalTrackingEngine:
             frame_id=frame_id,
             timestamp_ms=timestamp_ms,
             keypoints=keypoints,
-            player_bounding_box=(base_x - 0.15, base_y - 0.2, base_x + 0.15, base_y + 0.4)
+            player_bounding_box=(
+                base_x - 0.15,
+                base_y - 0.2,
+                base_x + 0.15,
+                base_y + 0.4,
+            ),
         )
 
-    def _get_bounding_box(self, keypoints: List[Keypoint]) -> Tuple[float, float, float, float]:
+    def _get_bounding_box(
+        self, keypoints: List[Keypoint]
+    ) -> Tuple[float, float, float, float]:
         """Calculate player bounding box from keypoints"""
         if not keypoints:
             return (0, 0, 0, 0)
         xs = [kp.x for kp in keypoints if kp.visibility > 0.5]
         ys = [kp.y for kp in keypoints if kp.visibility > 0.5]
         return (min(xs), min(ys), max(xs), max(ys))
+
 
 class BallTrackingEngine:
     """
@@ -164,7 +210,9 @@ class BallTrackingEngine:
         except ImportError:
             self.model_loaded = False
 
-    def detect_ball(self, frame: np.ndarray) -> Tuple[Optional[Tuple[float, float]], float]:
+    def detect_ball(
+        self, frame: np.ndarray
+    ) -> Tuple[Optional[Tuple[float, float]], float]:
         """Detect ball position and confidence"""
         # Mock detection - in production use actual model
         h, w = frame.shape[:2]
@@ -174,50 +222,68 @@ class BallTrackingEngine:
         confidence = np.random.uniform(0.75, 0.98)
         return (ball_x, ball_y), confidence
 
+
 class EventDetectionEngine:
     """
     Detect football events: passes, shots, tackles, sprints, etc.
     """
 
-    EVENT_TYPES = ["pass", "shot", "tackle", "sprint", "dribble", "interception", "save", "goal"]
+    EVENT_TYPES = [
+        "pass",
+        "shot",
+        "tackle",
+        "sprint",
+        "dribble",
+        "interception",
+        "save",
+        "goal",
+    ]
 
     def detect_events(self, frame_sequence: List[FrameData]) -> List[Dict]:
         """Analyze frame sequence to detect events"""
         events = []
 
         for i in range(1, len(frame_sequence)):
-            prev_frame = frame_sequence[i-1]
+            prev_frame = frame_sequence[i - 1]
             curr_frame = frame_sequence[i]
 
             # Detect shot: rapid leg extension + ball proximity
             if self._is_shot_motion(curr_frame, prev_frame):
-                events.append({
-                    "type": "shot",
-                    "frame_id": curr_frame.frame_id,
-                    "timestamp_ms": curr_frame.timestamp_ms,
-                    "confidence": 0.85,
-                    "foot": self._determine_foot(curr_frame)
-                })
+                events.append(
+                    {
+                        "type": "shot",
+                        "frame_id": curr_frame.frame_id,
+                        "timestamp_ms": curr_frame.timestamp_ms,
+                        "confidence": 0.85,
+                        "foot": self._determine_foot(curr_frame),
+                    }
+                )
 
             # Detect pass: arm/leg motion + ball trajectory
             elif self._is_pass_motion(curr_frame, prev_frame):
-                events.append({
-                    "type": "pass",
-                    "frame_id": curr_frame.frame_id,
-                    "timestamp_ms": curr_frame.timestamp_ms,
-                    "confidence": 0.82,
-                    "foot": self._determine_foot(curr_frame)
-                })
+                events.append(
+                    {
+                        "type": "pass",
+                        "frame_id": curr_frame.frame_id,
+                        "timestamp_ms": curr_frame.timestamp_ms,
+                        "confidence": 0.82,
+                        "foot": self._determine_foot(curr_frame),
+                    }
+                )
 
             # Detect sprint: high velocity + arm pumping
             elif self._is_sprint_motion(curr_frame, prev_frame):
-                events.append({
-                    "type": "sprint",
-                    "frame_id": curr_frame.frame_id,
-                    "timestamp_ms": curr_frame.timestamp_ms,
-                    "confidence": 0.78,
-                    "estimated_speed_kmh": self._estimate_speed(curr_frame, prev_frame)
-                })
+                events.append(
+                    {
+                        "type": "sprint",
+                        "frame_id": curr_frame.frame_id,
+                        "timestamp_ms": curr_frame.timestamp_ms,
+                        "confidence": 0.78,
+                        "estimated_speed_kmh": self._estimate_speed(
+                            curr_frame, prev_frame
+                        ),
+                    }
+                )
 
         return events
 
