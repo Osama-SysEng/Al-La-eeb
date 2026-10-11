@@ -53,15 +53,21 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: staging
+    # Runs only when the staging kubeconfig secret exists (user infrastructure).
+    if: ${{ vars.DEPLOY_STAGING_ENABLED == 'true' && secrets.STAGING_KUBECONFIG != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Configure kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: "v1.28.0"
+      - name: Write kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.STAGING_KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
       - name: Deploy to staging
         run: |
-          kubectl config use-context staging
           kubectl apply -k infrastructure/k8s/overlays/staging/
           kubectl rollout status deployment/api-gateway -n allaeeb --timeout=300s
 
@@ -69,15 +75,21 @@ jobs:
     needs: deploy-staging
     runs-on: ubuntu-latest
     environment: production
+    # Runs only on version tags when the production kubeconfig secret exists.
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && secrets.PROD_KUBECONFIG != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Configure kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: "v1.28.0"
+      - name: Write kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.PROD_KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
       - name: Deploy to production
         run: |
-          kubectl config use-context production
           kubectl apply -k infrastructure/k8s/overlays/production/
           kubectl rollout status deployment/api-gateway -n allaeeb --timeout=600s
       - name: Verify deployment
