@@ -7,7 +7,7 @@ from app.pipelines.cv_pipeline import (
 
 
 def test_skeletal_tracking():
-    engine = SkeletalTrackingEngine()
+    engine = SkeletalTrackingEngine(force_mock=True)  # deterministic everywhere
     frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
     result = engine.process_frame(frame, 0, 0.0)
     assert len(result.keypoints) == 33

@@ -67,14 +67,18 @@ class SkeletalTrackingEngine:
         "right_foot_index",
     ]
 
-    def __init__(self, model_path: str = None):
+    def __init__(self, model_path: str = None, force_mock: bool = False):
         self.model_path = model_path
         self.fps_target = 30
         self.keypoint_count = 33
+        self._force_mock = force_mock
         self._init_model()
 
     def _init_model(self):
         """Initialize MediaPipe Pose model"""
+        if self._force_mock:
+            self.model_loaded = False
+            return
         try:
             import mediapipe as mp
 
