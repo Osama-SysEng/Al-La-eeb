@@ -263,10 +263,13 @@ async def generate_coaching_report(video_id: str, player_id: str, language: str 
     }
 
 @router.get("/drills")
-async def get_drill_library(category: Optional[str] = None):
+async def get_drill_library(category: Optional[str] = None, limit: int = 50, offset: int = 0):
     """Get drill library (500+ drills)"""
+    limit = max(1, min(limit, 500))
+    offset = max(0, offset)
     if category:
-        return {"category": category, "drills": coach.DRILL_LIBRARY.get(category, [])}
+        drills = coach.DRILL_LIBRARY.get(category, [])
+        return {"category": category, "drills": drills[offset:offset + limit], "total": len(drills), "limit": limit, "offset": offset}
     return {"total_drills": coach.drill_count, "categories": list(coach.DRILL_LIBRARY.keys()), "library": coach.DRILL_LIBRARY}
 
 @router.post("/chat")
