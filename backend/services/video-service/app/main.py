@@ -17,9 +17,9 @@ MAX_UPLOAD_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Video Service starting...")
+    logger.info("Video Service starting...")
     yield
-    print("Video Service shutting down...")
+    logger.info("Video Service shutting down...")
 
 
 app = FastAPI(title="Al-La'eeb Video Service", version="1.0.0", lifespan=lifespan)

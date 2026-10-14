@@ -1,5 +1,4 @@
 # API Gateway - Enhanced Security & Error Handling
-import logging
 import time
 import traceback
 from contextlib import asynccontextmanager
@@ -14,9 +13,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from shared.config.settings import get_settings
+from shared.logging_utils import get_logger, new_request_id, request_id_ctx
 
 settings = get_settings()
-logger = logging.getLogger("api-gateway")
+logger = get_logger("api-gateway")
 
 
 @asynccontextmanager
@@ -87,10 +87,14 @@ SERVICES: Dict[str, str] = {
 @app.middleware("http")
 async def logging_middleware(request: Request, call_next):
     start = time.time()
-    request_id = request.headers.get("X-Request-ID", f"req-{int(time.time() * 1000)}")
+    request_id = request.headers.get("X-Request-ID") or new_request_id()
+    request_id_ctx.set(request_id)
+    client = request.client.host if request.client else "unknown"
 
     logger.info(
-        f"[{request_id}] {request.method} {request.url.path} from {request.client.host}"
+        f"access: {request.method} {request.url.path} from {client}",
+        extra={"fields": {"http.method": request.method, "http.path": request.url.path,
+                          "client": client}},
     )
 
     try:
@@ -100,12 +104,20 @@ async def logging_middleware(request: Request, call_next):
         response.headers["X-Process-Time"] = f"{duration:.3f}s"
         response.headers["X-Gateway-Version"] = "1.0.0"
 
-        logger.info(f"[{request_id}] {response.status_code} in {duration:.3f}s")
+        logger.info(
+            f"access: {request.method} {request.url.path} -> {response.status_code} in {duration:.3f}s",
+            extra={"fields": {"http.method": request.method, "http.path": request.url.path,
+                              "http.status": response.status_code, "duration_ms": round(duration * 1000, 1)}},
+        )
         return response
 
     except Exception as e:
         duration = time.time() - start
-        logger.error(f"[{request_id}] ERROR in {duration:.3f}s: {str(e)}")
+        logger.exception(
+            f"access: {request.method} {request.url.path} ERROR in {duration:.3f}s: {str(e)}",
+            extra={"fields": {"http.method": request.method, "http.path": request.url.path,
+                              "duration_ms": round(duration * 1000, 1)}},
+        )
         raise
 
 

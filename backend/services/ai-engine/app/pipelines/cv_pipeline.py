@@ -1,9 +1,12 @@
 # Computer Vision Pipeline
+import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
+
+_logger = logging.getLogger("cv-pipeline")
 
 
 @dataclass
@@ -92,7 +95,7 @@ class SkeletalTrackingEngine:
             self.mp_drawing = mp.solutions.drawing_utils
             self.model_loaded = True
         except ImportError:
-            print("Warning: MediaPipe not installed, using mock mode")
+            _logger.warning("MediaPipe not installed, using mock mode")
             self.model_loaded = False
 
     def process_frame(
